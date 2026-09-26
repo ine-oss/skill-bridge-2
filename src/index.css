@@ -1,0 +1,110 @@
+@import 'tailwindcss';
+
+:root {
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  color: #222724;
+  background: #f3f1ec;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --brand-900: #222724;
+  --brand-800: #2d332f;
+  --brand-700: #a9472f;
+  --brand-600: #bd5639;
+  --brand-500: #c9684b;
+  --brand-100: #f2ddd5;
+  --success-600: #3f765b;
+  --warning-500: #a9782b;
+  --neutral-100: #f3f1ec;
+  --neutral-200: #e5e1d9;
+  --neutral-300: #d3cec4;
+  --neutral-500: #777a73;
+  --neutral-700: #4c514b;
+  --neutral-900: #222724;
+  --white: #ffffff;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #f3f1ec;
+  color: var(--neutral-900);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  outline: none;
+}
+
+.card-surface {
+  @apply rounded-xl border bg-white;
+  border-color: #e2ded6;
+  box-shadow: 0 8px 24px rgba(34, 39, 36, 0.06);
+}
+
+.section-title {
+  @apply text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl;
+}
+
+.section-kicker {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-bold uppercase tracking-[0.18em];
+  background: var(--brand-100);
+  color: var(--brand-700);
+}
+
+.field-label {
+  @apply mb-2 block text-sm font-medium text-slate-700;
+}
+
+.grid-pattern {
+  background: #e9e5dd;
+}
+
+/* Keep existing utility-heavy pages on the same restrained visual system. */
+.bg-blue-600 { background-color: var(--brand-600) !important; }
+.bg-blue-50, .bg-blue-100 { background-color: var(--brand-100) !important; }
+.text-blue-700, .text-blue-800 { color: var(--brand-700) !important; }
+.hover\:bg-blue-700:hover { background-color: var(--brand-700) !important; }
+.border-slate-200 { border-color: #e2ded6 !important; }
+.bg-slate-50 { background-color: #f3f1ec !important; }
+.bg-slate-100 { background-color: #ebe8e1 !important; }
+.bg-slate-900 { background-color: #222724 !important; }
+.text-slate-900 { color: #222724 !important; }
+.text-slate-700 { color: #4c514b !important; }
+.text-slate-600 { color: #62665f !important; }
+.text-slate-500 { color: #777a73 !important; }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
