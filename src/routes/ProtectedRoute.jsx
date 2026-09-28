@@ -13,9 +13,5 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
     return <Navigate to="/unauthorized" replace />
   }
 
-  if (user.role === 'jobseeker' && !user.profileVerified && location.pathname !== '/jobseeker/profile') {
-    return <Navigate to="/jobseeker/profile" replace state={{ onboarding: true }} />
-  }
-
   return children
 }

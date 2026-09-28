@@ -1,6 +1,7 @@
 import { Menu, Search, UserCircle2 } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import Button from '../common/Button'
+import BrandLogo from '../common/BrandLogo'
 import { useLanguage } from '../../context/LanguageContext'
 
 const navItems = [
@@ -18,12 +19,8 @@ export default function PublicNavbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 md:px-8">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#bd5639] font-bold text-white">SB</div>
-          <div>
-            <div className="text-lg font-bold text-slate-900">Skill Bridge</div>
-            <div className="text-[10px] uppercase tracking-[0.2em] text-slate-500">Skills to Employment</div>
-          </div>
+        <Link to="/" className="flex items-center">
+          <BrandLogo />
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex">

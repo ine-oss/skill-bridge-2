@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Bell, ChevronLeft, House, Languages, Menu, MessageSquare, X } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Bell, BookOpen, BriefcaseBusiness, Building2, FileCheck2, LayoutDashboard, LogOut, Menu, MessageSquare, Search, Settings, ShieldCheck, Users, X } from 'lucide-react'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
+import BrandLogo from '../common/BrandLogo'
+
 
 const navByRole = {
   jobseeker: [
@@ -19,50 +21,107 @@ const navByRole = {
     ['dashboard', '/training/dashboard'], ['profile', '/training/profile'], ['programs', '/training/programs'],
     ['createTraining', '/training/create'], ['learners', '/training/learners'], ['settings', '/training/settings'],
   ],
+  teaching_center: [
+    ['dashboard', '/teaching-center/dashboard'], ['profile', '/training/profile'], ['programs', '/teaching-center/courses'],
+    ['learners', '/teaching-center/students'], ['settings', '/training/settings'],
+  ],
   admin: [['dashboard', '/admin/dashboard'], ['users', '/admin/users'], ['jobs', '/admin/jobs'], ['applications', '/admin/applications'], ['verification', '/admin/verification'], ['settings', '/admin/settings']],
 }
 
 export default function DashboardHeader() {
   const { user, logout } = useAuth()
-  const { language, setLanguage, t } = useLanguage()
+  const { t } = useLanguage()
+  const location = useLocation()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
-  const navItems = navByRole[user.role] || navByRole.jobseeker
-  const baseRole = user.role === 'jobseeker' ? 'jobseeker' : user.role
-  const messagesPath = user.role === 'jobseeker' || user.role === 'employer' ? `/${baseRole}/messages` : `/${baseRole}/dashboard`
-  const notificationsPath = user.role === 'jobseeker' || user.role === 'admin' ? `/${baseRole}/notifications` : `/${baseRole}/dashboard`
+  const onTeachingCenterRoutes = location.pathname.startsWith('/teaching-center')
+  const navItems = (user.role === 'training' && onTeachingCenterRoutes ? navByRole.teaching_center : navByRole[user.role]) || navByRole.jobseeker
+  const icons = {
+    dashboard: LayoutDashboard,
+    profile: user.role === 'employer' ? Building2 : FileCheck2,
+    skills: ShieldCheck,
+    evidence: FileCheck2,
+    jobs: Search,
+    matchedJobs: Search,
+    savedJobs: BriefcaseBusiness,
+    applications: BriefcaseBusiness,
+    messages: MessageSquare,
+    settings: Settings,
+    verification: ShieldCheck,
+    postJob: BriefcaseBusiness,
+    myJobs: BriefcaseBusiness,
+    shortlisted: Users,
+    interviews: Users,
+    analytics: LayoutDashboard,
+    programs: BookOpen,
+    createTraining: BookOpen,
+    learners: Users,
+    certificates: FileCheck2,
+    users: Users,
+  }
+  const workspaceBasePath = user.role === 'teaching_center' || onTeachingCenterRoutes ? '/teaching-center' : `/${user.role}`
+  const notificationsPath = user.role === 'jobseeker' || user.role === 'admin' ? `/${user.role}/notifications` : `${workspaceBasePath}/dashboard`
+  const isTeachingCenter = user.role === 'training' || user.role === 'teaching_center'
+  const displayName = user.name || (user.role === 'employer' ? 'Employer workspace' : isTeachingCenter ? 'Teaching center' : 'Job seeker')
+  const roleName = user.role === 'jobseeker' ? 'Job seeker' : isTeachingCenter ? 'Teaching center' : user.role
+  const signOut = () => {
+    logout()
+    navigate('/login')
+  }
+  const navigation = (
+    <nav className="space-y-1" aria-label="Workspace navigation">
+      {navItems.map(([label, path]) => {
+        const Icon = icons[label] || LayoutDashboard
+        return (
+          <NavLink
+            key={path}
+            to={path}
+            end={label === 'dashboard'}
+            onClick={() => setOpen(false)}
+            className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition ${isActive ? 'bg-[#eaf2ff] text-[#245eb2]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+          >
+            <Icon size={18} strokeWidth={1.9} />
+            <span>{t(label)}</span>
+          </NavLink>
+        )
+      })}
+    </nav>
+  )
 
   return (
-    <header className="mb-10 border-b border-[#d3cec4] pb-5">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => setOpen(!open)} className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 md:hidden" aria-label={t('menu')}>
-            {open ? <X size={19} /> : <Menu size={19} />}
+    <>
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col border-r border-slate-200 bg-white px-5 py-6 lg:flex">
+        <Link to={navItems[0][1]} className="mb-9 flex items-center px-1" aria-label="Skill Bridge workspace home">
+          <BrandLogo />
+        </Link>
+        <div className="mb-3 px-3 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Workspace</div>
+        {navigation}
+        <div className="mt-auto border-t border-slate-100 pt-5">
+          <div className="mb-4 flex items-center gap-3 px-2">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#eaf2ff] text-sm font-bold text-[#245eb2]">{displayName.charAt(0).toUpperCase()}</span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-bold text-slate-900">{displayName}</span>
+              <span className="block text-xs capitalize text-slate-500">{roleName}</span>
+            </span>
+          </div>
+          <button type="button" onClick={signOut} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+            <LogOut size={18} /> {t('logout')}
           </button>
-          <Link to={navItems[0][1]} className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#bd5639] font-bold text-white">SB</span>
-            <span className="hidden text-lg font-extrabold text-slate-900 sm:block">Skill Bridge</span>
-          </Link>
         </div>
+      </aside>
 
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => navigate(-1)} className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600" title={t('back')}><ChevronLeft size={18} /></button>
-          <Link to="/" className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600" title={t('home')}><House size={18} /></Link>
-          <Link to={messagesPath} className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600" title={t('messages')}><MessageSquare size={18} /></Link>
-          <Link to={notificationsPath} className="rounded-lg border border-slate-200 bg-white p-2 text-slate-600" title={t('notifications')}><Bell size={18} /></Link>
-          <label className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-2 text-slate-600" title={t('language')}>
-            <Languages size={16} />
-            <select value={language} onChange={(event) => setLanguage(event.target.value)} className="max-w-20 bg-transparent text-xs font-semibold outline-none">
-              <option value="en">English</option><option value="rw">Kinyarwanda</option><option value="sw">Kiswahili</option><option value="fr">Français</option>
-            </select>
-          </label>
-          <button type="button" onClick={logout} className="rounded-lg bg-[#222724] px-3 py-2 text-xs font-bold text-white">{t('logout')}</button>
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white px-4 py-3 lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <Link to={navItems[0][1]} aria-label="Skill Bridge workspace home"><BrandLogo /></Link>
+          <div className="flex items-center gap-2">
+            <Link to={notificationsPath} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100" aria-label={t('notifications')}><Bell size={19} /></Link>
+            <button type="button" onClick={() => setOpen(!open)} className="rounded-lg p-2 text-slate-700 hover:bg-slate-100" aria-label={t('menu')} aria-expanded={open}>
+              {open ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
         </div>
-      </div>
-
-      <nav className={`${open ? 'block' : 'hidden'} mt-5 space-y-1 md:flex md:flex-wrap md:gap-x-6 md:gap-y-2 md:space-y-0`}>
-        {navItems.map(([label, path]) => <Link key={path} to={path} onClick={() => setOpen(false)} className="block py-2 text-sm font-semibold text-slate-600 hover:text-[#a9472f]">{t(label)}</Link>)}
-      </nav>
-    </header>
+        {open && <div className="max-h-[calc(100vh-68px)] overflow-y-auto border-t border-slate-100 pb-3 pt-4">{navigation}<button type="button" onClick={signOut} className="mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"><LogOut size={18} /> {t('logout')}</button></div>}
+      </header>
+    </>
   )
 }

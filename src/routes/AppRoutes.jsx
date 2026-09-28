@@ -130,6 +130,7 @@ export default function AppRoutes() {
         <Route path="portfolio" element={<JobSeekerPortfolioPage />} />
         <Route path="evidence" element={<JobSeekerEvidencePage />} />
         <Route path="jobs" element={<JobSeekerJobsPage />} />
+        <Route path="search" element={<JobSeekerJobsPage />} />
         <Route path="matched-jobs" element={<JobSeekerMatchedJobsPage />} />
         <Route path="saved-jobs" element={<JobSeekerSavedJobsPage />} />
         <Route path="applications" element={<JobSeekerApplicationsPage />} />
@@ -163,6 +164,12 @@ export default function AppRoutes() {
         <Route path="certificates" element={<TrainingCertificatesPage />} />
         <Route path="analytics" element={<TrainingAnalyticsPage />} />
         <Route path="settings" element={<TrainingSettingsPage />} />
+      </Route>
+
+      <Route path="/teaching-center" element={<ProtectedRoute allowedRoles={['training', 'teaching_center']}><TrainingLayout /></ProtectedRoute>}>
+        <Route path="dashboard" element={<TrainingDashboardPage />} />
+        <Route path="courses" element={<TrainingProgramsPage />} />
+        <Route path="students" element={<TrainingLearnersPage />} />
       </Route>
 
       <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminLayout /></ProtectedRoute>}>
