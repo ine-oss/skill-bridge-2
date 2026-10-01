@@ -1,0 +1,17 @@
+# Local PostgreSQL for Skill Bridge (used by start-skill-bridge when no database is running).
+# Credentials come from DATABASE_URL in backend/.env (the start script passes them in).
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: skillbridge-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-skillbridge}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - skillbridge-db:/var/lib/postgresql/data
+volumes:
+  skillbridge-db:

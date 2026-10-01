@@ -1,0 +1,521 @@
+// Skill Bridge — database schema
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+// Role values match the role strings the React app already uses.
+enum Role {
+  jobseeker
+  employer
+  training
+  admin
+}
+
+enum AccountStatus {
+  ACTIVE
+  PENDING
+  SUSPENDED
+}
+
+enum VerificationStatus {
+  NOT_SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum JobStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  CLOSED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  TEMPORARY
+}
+
+enum WorkMode {
+  ONSITE
+  HYBRID
+  REMOTE
+}
+
+enum ApplicationStatus {
+  NEW
+  REVIEWING
+  SHORTLISTED
+  INTERVIEW
+  OFFERED
+  HIRED
+  REJECTED
+  WITHDRAWN
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum ProgramStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum TrainingMode {
+  ONLINE
+  HYBRID
+  IN_PERSON
+}
+
+enum Difficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  IN_PROGRESS
+  COMPLETED
+  DROPPED
+}
+
+enum NotificationType {
+  JOB
+  APPLICATION
+  INTERVIEW
+  TRAINING
+  MESSAGE
+  SYSTEM
+}
+
+enum FilePurpose {
+  AVATAR
+  LOGO
+  CV
+  VERIFICATION
+  EVIDENCE
+}
+
+enum TokenType {
+  PASSWORD_RESET
+  EMAIL_VERIFICATION
+}
+
+// ---------------------------------------------------------------------------
+// Users and profiles
+// ---------------------------------------------------------------------------
+
+model User {
+  id                 String             @id @default(cuid())
+  name               String
+  email              String             @unique
+  passwordHash       String
+  role               Role
+  status             AccountStatus      @default(ACTIVE)
+  emailVerified      Boolean            @default(false)
+  profileVerified    Boolean            @default(false)
+  verificationStatus VerificationStatus @default(NOT_SUBMITTED)
+  avatarUrl          String?
+  phone              String?
+  emailNotifications Boolean            @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  jobSeekerProfile JobSeekerProfile?
+  company          Company?
+  trainingProvider TrainingProvider?
+
+  applications         Application[]
+  savedJobs            SavedJob[]
+  enrollments          Enrollment[]
+  notifications        Notification[]
+  sentMessages         Message[]             @relation("SentMessages")
+  receivedMessages     Message[]             @relation("ReceivedMessages")
+  verificationRequests VerificationRequest[] @relation("VerificationSubject")
+  reviewedRequests     VerificationRequest[] @relation("VerificationReviewer")
+  auditLogs            AuditLog[]
+  tokens               AuthToken[]
+  files                FileUpload[]
+}
+
+model JobSeekerProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline          String?
+  location          String?
+  bio               String?
+  targetCareer      String?
+  education         String[]
+  experience        String[]
+  languages         String[]
+  certifications    String[]
+  portfolioUrl      String?
+  linkedinUrl       String?
+  githubUrl         String?
+  cvUrl             String? // "/api/files/<id>" of the uploaded CV
+  profileCompletion Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  skills   UserSkill[]
+  evidence Evidence[]
+}
+
+model Company {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  ownerId     String   @unique
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  contactName String?
+  industry    String?
+  location    String?
+  size        String?
+  website     String?
+  description String?
+  logoUrl     String?
+  verified    Boolean  @default(false)
+  rating      Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  jobs Job[]
+}
+
+model TrainingProvider {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  ownerId        String   @unique
+  owner          User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name           String
+  pointOfContact String?
+  location       String?
+  website        String?
+  description    String?
+  verified       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  programs TrainingProgram[]
+}
+
+// ---------------------------------------------------------------------------
+// Skills
+// ---------------------------------------------------------------------------
+
+model SkillCategory {
+  id     String  @id @default(cuid())
+  slug   String  @unique
+  name   String
+  skills Skill[]
+}
+
+model Skill {
+  id         String         @id @default(cuid())
+  name       String         @unique
+  categoryId String?
+  category   SkillCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt  DateTime       @default(now())
+
+  userSkills     UserSkill[]
+  jobSkills      JobSkill[]
+  programSkills  ProgramSkill[]
+}
+
+model UserSkill {
+  id        String           @id @default(cuid())
+  profileId String
+  profile   JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  level     SkillLevel       @default(BEGINNER)
+  score     Int              @default(0) // 0–100
+  updatedAt DateTime         @updatedAt
+
+  @@unique([profileId, skillId])
+}
+
+model Evidence {
+  id          String           @id @default(cuid())
+  profileId   String
+  profile     JobSeekerProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  url         String?
+  skills      String[]
+  createdAt   DateTime         @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Jobs and hiring
+// ---------------------------------------------------------------------------
+
+model Job {
+  id               String         @id @default(cuid())
+  companyId        String
+  company          Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  title            String
+  team             String?
+  location         String
+  employmentType   EmploymentType @default(FULL_TIME)
+  mode             WorkMode       @default(ONSITE)
+  experience       String?
+  salary           String?
+  industry         String?
+  description      String
+  responsibilities String[]
+  requirements     String[]
+  benefits         String[]
+  status           JobStatus      @default(DRAFT)
+  deadline         DateTime?
+  publishedAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  skills       JobSkill[]
+  applications Application[]
+  savedBy      SavedJob[]
+
+  @@index([status])
+  @@index([companyId])
+}
+
+model JobSkill {
+  jobId   String
+  job     Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skillId String
+  skill   Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([jobId, skillId])
+}
+
+model SavedJob {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, jobId])
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  jobId       String
+  job         Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicantId String
+  applicant   User              @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  status      ApplicationStatus @default(NEW)
+  match       Int               @default(0) // skill match 0–100 at time of applying
+  coverLetter String?
+  resumeUrl   String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  events     ApplicationEvent[]
+  interviews Interview[]
+
+  @@unique([jobId, applicantId])
+  @@index([applicantId])
+}
+
+model ApplicationEvent {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        ApplicationStatus
+  note          String?
+  createdAt     DateTime          @default(now())
+}
+
+model Interview {
+  id            String          @id @default(cuid())
+  applicationId String
+  application   Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  scheduledAt   DateTime
+  durationMins  Int             @default(45)
+  type          String // e.g. "Technical interview", "Portfolio review"
+  location      String? // room or meeting link
+  notes         String?
+  status        InterviewStatus @default(SCHEDULED)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Training
+// ---------------------------------------------------------------------------
+
+model TrainingProgram {
+  id          String           @id @default(cuid())
+  providerId  String
+  provider    TrainingProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  title       String
+  category    String?
+  type        String? // Course, Bootcamp, Programme…
+  mode        TrainingMode     @default(ONLINE)
+  duration    String?
+  difficulty  Difficulty       @default(BEGINNER)
+  instructor  String?
+  description String
+  certificate Boolean          @default(true)
+  price       String?
+  status      ProgramStatus    @default(DRAFT)
+  startDate   DateTime?
+  nextSession DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  skills      ProgramSkill[]
+  enrollments Enrollment[]
+
+  @@index([status])
+}
+
+model ProgramSkill {
+  programId String
+  program   TrainingProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([programId, skillId])
+}
+
+model Enrollment {
+  id          String           @id @default(cuid())
+  programId   String
+  program     TrainingProgram  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress    Int              @default(0)
+  status      EnrollmentStatus @default(ENROLLED)
+  enrolledAt  DateTime         @default(now())
+  completedAt DateTime?
+
+  certificate Certificate?
+
+  @@unique([programId, userId])
+}
+
+model Certificate {
+  id           String     @id @default(cuid())
+  code         String     @unique
+  enrollmentId String     @unique
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  issuedAt     DateTime   @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Communication, trust & safety
+// ---------------------------------------------------------------------------
+
+model Message {
+  id          String    @id @default(cuid())
+  senderId    String
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId String
+  recipient   User      @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([senderId, recipientId])
+  @@index([recipientId])
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  type        NotificationType @default(SYSTEM)
+  link        String?
+  read        Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, read])
+}
+
+model VerificationRequest {
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation("VerificationSubject", fields: [userId], references: [id], onDelete: Cascade)
+  details      Json // proof submitted by the user (documents, registration number…)
+  status       VerificationStatus @default(UNDER_REVIEW)
+  reviewerId   String?
+  reviewer     User?              @relation("VerificationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewerNote String?
+  createdAt    DateTime           @default(now())
+  reviewedAt   DateTime?
+
+  @@index([status])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String // e.g. "user.login", "job.create"
+  entity    String?
+  entityId  String?
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+model AuthToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      TokenType
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// Uploaded files are stored in the database so the app works the same locally and on
+// serverless hosts (no writable disk). Fine for CVs/logos up to a few MB.
+model FileUpload {
+  id        String      @id @default(cuid())
+  ownerId   String
+  owner     User        @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  purpose   FilePurpose
+  filename  String
+  mimeType  String
+  size      Int
+  data      Bytes
+  createdAt DateTime    @default(now())
+
+  @@index([ownerId])
+}
